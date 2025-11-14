@@ -86,7 +86,7 @@ def _format_authors_apa(authors_field: str) -> str:
         return f"{names[0]}, & {names[1]}"
     return f"{', '.join(names[:-1])}, & {names[-1]}"
 
-def PaperFromBib(paper: str) -> None:
+def PaperFromBib(id: int, paper: str) -> None:
     """
     Prints the APA style reference from a BibTeX entry.
     """
@@ -98,6 +98,7 @@ def PaperFromBib(paper: str) -> None:
     journal = _unescape_latex(fields.get('journal', '')).strip()
     volume = _unescape_latex(fields.get('volume', '')).strip()
     number = _unescape_latex(fields.get('number', '')).strip()
+    pages = _unescape_latex(fields.get('pages', '')).strip()
     # Build journal/volume(number) part
     journal_part = journal
     vol_part = ""
@@ -108,6 +109,8 @@ def PaperFromBib(paper: str) -> None:
     elif number:
         vol_part = f"({number})"
     if vol_part:
+        if pages:
+            vol_part += f", {pages}"
         if journal_part:
             journal_part = f"{journal_part}, {vol_part}"
         else:
@@ -123,8 +126,30 @@ def PaperFromBib(paper: str) -> None:
     if journal_part:
         apa += f"{journal_part}."
     apa = re.sub(r'\s+', ' ', apa).strip()
-    print(apa)
+    print('[' + str(id) + '] '+ apa)
 
+def PapersFromBib(bibtex: str) -> None:
+    """
+    Prints APA style references for multiple BibTeX entries.
+    """
+    try:
+        db = bibtexparser.loads(bibtex)
+        id = 0
+        for entry in db.entries:
+            # 1. Create a new empty database object
+            single_entry_db = bibtexparser.bibdatabase.BibDatabase()
+
+            # 2. Assign the current entry dictionary
+            single_entry_db.entries = [entry]
+
+            # 3. Convert single entry back to BibTeX string
+            paper_bib = bibtexparser.dumps(single_entry_db)
+
+            # Process the single entry string
+            id = id + 1
+            PaperFromBib(id, paper_bib)
+    except Exception as e:
+        print(f"Error parsing multiple BibTeX entries: {e}", file=sys.stderr)
 
 def main():
     parser = argparse.ArgumentParser(description="Prints a BibTeX entry using PaperFromBib")
@@ -139,7 +164,7 @@ def main():
     if args.file:
         try:
             with open(args.file, "r", encoding="utf-8") as f:
-                PaperFromBib(f.read())
+                PapersFromBib(f.read())
         except Exception as e:
             print(f"Error reading ` {args.file} `: {e}", file=sys.stderr)
             sys.exit(1)
