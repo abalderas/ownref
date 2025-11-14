@@ -170,7 +170,7 @@ def main():
             sys.exit(1)
         return
 
-    # Use stdin data if available (e.g., pipe)
+    # Use stdin data if available (e.g., pipe) --
     if not sys.stdin.isatty():
         PaperFromBib(sys.stdin.read())
         return
